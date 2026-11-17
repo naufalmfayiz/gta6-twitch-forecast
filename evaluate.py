@@ -33,7 +33,7 @@ for a in M.analogues({"comparables": list(allc.values())}):
     k = {"known": [{"viewers": m[ds]}], "day_start": c["day_start"], "history_hourly": c["hourly"], "comparables": list(allc.values())}
     truth = {h: m[ds + timedelta(hours=h - 1)] for h in range(2, 25)}
     p = m[ds]; base = {"hours": [{"hour": h, "q": [p * math.exp(z * .15 * math.sqrt(h - 1)) for z in (-1.645, -.674, 0, .674, 1.645)]} for h in range(2, 25)]}
-    ls.append((a[0], a[1][-1], loss(M.forecast(k, exclude={a[0]}), truth), loss(base, truth)))
+    ls.append((a[0], a[1][len(M.FEAT_LAGS)], loss(M.forecast(k, exclude={a[0]}), truth), loss(base, truth)))
 for r in ls: print("  %-28s live=%5.2f model %.3f base %.3f" % r)
 live = [r for r in ls if r[1] > 0.3]
 print("LOO all n=%d model %.4f base %.4f" % (len(ls), sum(r[2] for r in ls)/len(ls), sum(r[3] for r in ls)/len(ls)))

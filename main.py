@@ -6,6 +6,7 @@ LEVELS = [0.05, 0.25, 0.5, 0.75, 0.95]
 FEAT_LAGS = (1, 2, 4, 8)   # hours before hour 1 used to describe the pre-launch ramp
 BW = 2.0                   # kernel bandwidth on feature distance (LOO plateau 1.5-3)
 JITTER = 0.25              # log-spread added around each analogue path (scaled by sqrt(h-1))
+SIZE_SCALE = 0.5          # log-viewers per unit of feature distance
 NGRID = 7                  # normal nodes per analogue
 
 
@@ -30,6 +31,8 @@ def feats(m, day_start):
     # hour-1 size against the prior week's typical level: launch already on vs. not yet
     week = [m[t] for t in m if day_start - timedelta(days=7) <= t < day_start - timedelta(hours=12) and m[t] > 0]
     f.append(math.log(v1 / (sorted(week)[len(week) // 2] if week else v1)) / 3)
+    # absolute size of hour 1: small categories can still explode, big ones mostly decay and rebound
+    f.append(math.log(v1) / SIZE_SCALE)
     return f
 
 
@@ -69,7 +72,7 @@ def forecast(case, exclude=()):
     f0 = feats(m, ds)
     an = [a for a in analogues(case) if a[0] not in exclude]
     if f0 is None:
-        f0 = [0.0] * (len(FEAT_LAGS) + 1)
+        f0 = [0.0] * (len(FEAT_LAGS) + 1) + [math.log(p1) / SIZE_SCALE]
     w = [math.exp(-sum((x - y) ** 2 for x, y in zip(f0, a[1])) / (2 * BW * BW)) + 1e-9 for a in an]
     zs = [(-1.5, 0.067), (-1.0, 0.121), (-0.5, 0.176), (0.0, 0.199), (0.5, 0.176), (1.0, 0.121), (1.5, 0.067)][:NGRID]
     rows = []
